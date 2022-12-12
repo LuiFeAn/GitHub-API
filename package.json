@@ -1,6 +1,11 @@
 {
   "author": "Luis Fernando",
   "description": "API criada para minerar dados do GitHub",
+  "scripts": {
+    "build":"tsc",
+    "start":"node build/server.js",
+    "dev":"nodemon -e ts,json src/server.ts"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
