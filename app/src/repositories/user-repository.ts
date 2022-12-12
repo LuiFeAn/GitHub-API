@@ -6,33 +6,32 @@ class UserRepository {
     async getUser(nick: string){
         
         const browser = await puppeteer.launch();
-
         const page = await browser.newPage();
-
         const profile = `https://github.com/${nick}`;
 
         await page.goto(profile);
         
         const data = await page.evaluate( () => {
 
-            function getElementValue(
-                idOrClass: string,
-                 type: 'innerHTML' | 'attribute' = 'innerHTML'
-                ){
+            function replaceAndTrim(value: string){
+                return value.replace('\n','').trim() as string;
+            }
+
+            function getElementValue(idOrClass: string,type: 'innerHTML' | 'attribute' = 'innerHTML'){
+
                 const verifyType = {
-                    'innerHTML': () => 
-                    document.querySelector(idOrClass)?.textContent,
+                    'innerHTML': () => {
+                        const value = document.querySelector(idOrClass)?.textContent;
+                        if(value){
+                            return replaceAndTrim(value);
+                        }
+                    },
                     'attribute': () => 
                     document.querySelector(idOrClass)?.getAttribute('src'),
                 }
                 return verifyType[type]();
 
             }
-
-            function replaceAndTrim(value: string){
-                return value.replace('\n','').trim() as string;
-            }
-
             
             const username = getElementValue('.vcard-fullname');
             const nickname = getElementValue('.p-nickname');
@@ -44,10 +43,10 @@ class UserRepository {
             }
 
             return {
-                username: replaceAndTrim(username as string),
-                nickname: replaceAndTrim(nickname as string),
-                bio: replaceAndTrim(bio as string),
-                photo: photo as string,
+                username,
+                nickname,
+                bio,
+                photo,
             };
 
         });
