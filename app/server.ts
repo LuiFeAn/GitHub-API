@@ -1,4 +1,3 @@
 import { app } from "./app";
 
-
-app.listen(3001, () => 'Server Started At Port 3001 🚀🔥👨‍💻');
+app.listen(3001, () => console.log('Server Started At Port 3001 🚀🔥👨‍💻'));

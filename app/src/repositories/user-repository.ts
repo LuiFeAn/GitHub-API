@@ -39,6 +39,10 @@ class UserRepository {
             const bio = getElementValue('.user-profile-bio')
             const photo = getElementValue('.avatar-user','attribute');
 
+            if ( ! username || ! nickname) {
+                return null
+            }
+
             return {
                 username: replaceAndTrim(username as string),
                 nickname: replaceAndTrim(nickname as string),
