@@ -1,45 +1,84 @@
-import puppeteer from "puppeteer";
-import delay from "../utils/delay";
+import pupDataSource from "../scraping/pup-data-source";
+import { GetElementValueProps } from "../types/get-element-value";
 
 class UserRepository {
 
     async getUser(nick: string){
-        
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
+
         const profile = `https://github.com/${nick}`;
 
-        await page.goto(profile);
-        
-        const data = await page.evaluate( () => {
+        const user = await pupDataSource.config({
+            gotoPage:profile,
+        },() => {
 
-            function replaceAndTrim(value: string){
-                return value.replace('\n','').trim() as string;
-            }
+            const username = miner({
+                select:'.vcard-fullname',
+            });
 
-            function getElementValue(idOrClass: string,type: 'innerHTML' | 'attribute' = 'innerHTML'){
+            const nickname =  miner({
+                select:'.p-nickname',
+            });
 
-                const verifyType = {
-                    'innerHTML': () => {
-                        const value = document.querySelector(idOrClass)?.textContent;
-                        if(value){
-                            return replaceAndTrim(value);
-                        }
-                    },
-                    'attribute': () => 
-                    document.querySelector(idOrClass)?.getAttribute('src'),
-                }
-                return verifyType[type]();
+            const bio =  miner({
+                select:'.user-profile-bio'
+            });
 
-            }
-            
-            const username = getElementValue('.vcard-fullname');
-            const nickname = getElementValue('.p-nickname');
-            const bio = getElementValue('.user-profile-bio')
-            const photo = getElementValue('.avatar-user','attribute');
+            const photo =  miner({
+                select:'.avatar-user',
+                type:'attribute'
+            });
+
+            const followInfos = miner({
+                select:'.text-bold.color-fg-default',
+                many:true,
+            });
+
+            let following;
+            let followers;
+
+           if(followInfos?.length){
+             [ following, followers ] = followInfos;
+           }
 
             if ( ! username || ! nickname) {
                 return null
+            }
+
+            function miner ({select,many = false,type = 'text'}: GetElementValueProps) {
+
+
+                function replaceAndTrim(value:string){
+                    return value.replace('\n','').trim();
+                }
+
+                const verifyType = {
+
+                    'text': () => {
+
+                        if( !many ){
+
+                            const value = document.querySelector(select)?.textContent;
+                            const replace = replaceAndTrim(value || '');
+                            return replace;
+
+                        }else{
+
+                            const nodeValues = document.querySelectorAll(select);
+                            const values = [...nodeValues];
+
+                            const mapTextValues = values.map( value => replaceAndTrim(value.textContent as string));
+                            return mapTextValues;
+
+                        }
+                    },
+
+                    'attribute': () =>
+                    document.querySelector(select)?.getAttribute('src'),
+                }
+
+                return verifyType[type]();
+
+
             }
 
             return {
@@ -47,13 +86,15 @@ class UserRepository {
                 nickname,
                 bio,
                 photo,
+                follow:{
+                    following,
+                    followers,
+                }
             };
 
         });
 
-        return data;
-        
-
+        return user;
     }
 
 
